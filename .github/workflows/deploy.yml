@@ -1,0 +1,50 @@
+name: Deploy Next.js
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            mkdir -p /var/www/adminrealproxy
+
+            cd /var/www/adminrealproxy
+
+            if [ ! -d ".git" ]; then
+              git init
+              git remote add origin https://github.com/Md-Abu-Rayhan/admin-realproxy-nextjs.git
+            fi
+
+            git fetch --all
+            git reset --hard origin/main
+
+            if [ ! -d "app" ] && [ ! -d "pages" ] && [ ! -d "src/app" ] && [ ! -d "src/pages" ]; then
+              echo "Error: app or pages directory not found (checked root and src/)"
+              ls -la
+              exit 1
+            fi
+
+            npm install
+
+            pm2 stop adminrealproxy || true
+
+            npm run build
+
+            cp -r .next/static .next/standalone/.next/static
+            cp -r public .next/standalone/public
+
+            pm2 restart adminrealproxy || pm2 start ecosystem.config.js
+            pm2 save
