@@ -1,4 +1,4 @@
-# CI/CD Pipeline for admin-realproxy-nextjs
+# CI/CD Pipeline for admin-realproxy-nextjs - v2
 name: Deploy Next.js
 
 on:
