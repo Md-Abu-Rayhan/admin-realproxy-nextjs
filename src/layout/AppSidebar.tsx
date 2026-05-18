@@ -201,9 +201,9 @@ const AppSidebar: React.FC = () => {
             <Image
               src="/images/logo/logo.png"
               alt="Logo"
-              width={120}
-              height={34}
-              style={{ height: 'auto', width: 'auto', maxWidth: '120px' }}
+              width={90}
+              height={26}
+              style={{ height: 'auto', width: 'auto', maxWidth: '90px' }}
             />
           ) : (
             <Image
