@@ -11,20 +11,27 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
+    <div className="relative min-h-screen bg-white dark:bg-gray-900">
       <ThemeProvider>
-        <div className="relative flex lg:flex-row w-full h-screen justify-center flex-col  dark:bg-gray-900 sm:p-0">
-          {children}
-          <div className="lg:w-1/2 w-full h-full bg-brand-950 dark:bg-white/5 lg:grid items-center hidden">
-              <div className="relative items-center justify-center  flex z-1">
-              <div className="flex flex-col items-center max-w-full">
-                <p className="text-center text-gray-400 dark:text-white/60 text-2xl sm:text-3xl lg:text-3xl font-semibold whitespace-nowrap">
-                  Welcome to Admin Dashboard
-                </p>
-              </div>
+        <div className="flex flex-col lg:flex-row min-h-screen">
+          {/* Main content area */}
+          <main className="flex-1 flex flex-col w-full min-h-screen">
+            {children}
+          </main>
+
+          {/* Sidebar for Desktop */}
+          <div className="hidden lg:flex lg:w-1/2 bg-brand-950 dark:bg-white/5 items-center justify-center p-12">
+            <div className="max-w-lg text-center">
+              <h2 className="text-3xl font-bold text-white mb-4">
+                Welcome to Admin Dashboard
+              </h2>
+              <p className="text-gray-400 text-lg">
+                Manage your proxy network with ease and precision.
+              </p>
             </div>
           </div>
-          <div className="fixed bottom-6 right-6 z-50 hidden sm:block">
+
+          <div className="fixed bottom-6 right-6 z-50 sm:block">
             <ThemeTogglerTwo />
           </div>
         </div>
