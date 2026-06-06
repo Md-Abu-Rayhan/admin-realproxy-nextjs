@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
-const API_URL = "http://127.0.0.1:5001";
+// const API_URL = "http://127.0.0.1:5001";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface UserRow {
   id: number;
