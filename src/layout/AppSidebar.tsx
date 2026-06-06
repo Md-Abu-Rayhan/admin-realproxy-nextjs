@@ -35,6 +35,16 @@ const navItems: NavItem[] = [
     name: "Pending Commissions",
     path: "/commissions",
   },
+  {
+    icon: <ListIcon />,
+    name: "All Users",
+    path: "/users",
+  },
+  {
+    icon: <UserCircleIcon />,
+    name: "User Info",
+    path: "/user-info",
+  },
 ];
 
 const AppSidebar: React.FC = () => {
