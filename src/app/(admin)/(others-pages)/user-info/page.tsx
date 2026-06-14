@@ -27,6 +27,8 @@ interface AffiliateSummary {
 interface Payment {
   id: number;
   customerOrderId: string;
+  merchantTransactionId: string;
+  epsTransactionId: string | null;
   amount: number;
   currency: string;
   status: string;
@@ -280,9 +282,15 @@ export default function UserInfoPage() {
           {data.recentPayments && (
             <SectionCard title={`Recent Payments (${data.recentPayments.length})`}>
               <DataTable
-                headers={["Order ID", "Product", "Amount", "Status", "Method", "Date"]}
+                headers={["Order ID/EpsTrxId", "Merchant ID", "Product", "Amount", "Status", "Method", "Date"]}
                 rows={data.recentPayments.map((p) => [
-                  <span key={p.id} className="font-mono text-xs">{p.customerOrderId}</span>,
+                  <span key={p.id} className="flex flex-col gap-0.5">
+                    <span className="font-mono text-xs">{p.customerOrderId}</span>
+                    {p.epsTransactionId && (
+                      <span className="font-mono text-[10px] text-gray-400 dark:text-gray-500">TXN: {p.epsTransactionId}</span>
+                    )}
+                  </span>,
+                  <span key={p.id + "-m"} className="font-mono text-xs">{p.merchantTransactionId || "—"}</span>,
                   p.productName,
                   `$${(p.amount / 125).toFixed(2)}`,
                   <Badge key={p.id} status={p.status} />,
