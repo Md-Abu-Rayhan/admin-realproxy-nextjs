@@ -2,9 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-
-// const API_URL = "http://127.0.0.1:5001";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+import { apiFetch } from "@/lib/api";
 
 interface UserRow {
   id: number;
@@ -35,13 +33,10 @@ export default function UsersPage() {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("adminToken");
       const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
       if (search) params.set("search", search);
 
-      const res = await fetch(`${API_URL}/api/Admin/users?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch(`/api/Admin/users?${params}`);
       if (!res.ok) throw new Error("Failed to fetch");
       const json: PaginatedResponse = await res.json();
       setData(json);

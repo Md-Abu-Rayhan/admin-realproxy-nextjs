@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+import { apiFetch } from "@/lib/api";
 
 interface Commission {
   id: number;
@@ -25,10 +24,7 @@ export default function PendingCommissionsPage() {
   const fetchCommissions = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("adminToken");
-      const res = await fetch(`${API_URL}/api/admin/commissions/pending`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch("/api/admin/commissions/pending");
       if (!res.ok) throw new Error("Failed to fetch");
       const data: Commission[] = await res.json();
       setCommissions(data);
@@ -46,10 +42,8 @@ export default function PendingCommissionsPage() {
   const handleApprove = async (id: number) => {
     setApproving(id);
     try {
-      const token = localStorage.getItem("adminToken");
-      const res = await fetch(`${API_URL}/api/admin/commissions/${id}/approve`, {
+      const res = await apiFetch(`/api/admin/commissions/${id}/approve`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Approval failed");

@@ -2,9 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
-
-// const API_URL = "http://127.0.0.1:5001";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+import { apiFetch } from "@/lib/api";
 
 interface PaymentSummary {
   totalTransactions: number;
@@ -172,10 +170,7 @@ export default function UserInfoPage() {
     setSearched(true);
     setData(null);
     try {
-      const token = localStorage.getItem("adminToken");
-      const res = await fetch(`${API_URL}/api/Admin/user/${encodeURIComponent(searchEmail.trim())}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch(`/api/Admin/user/${encodeURIComponent(searchEmail.trim())}`);
       if (res.status === 404) {
         toast.error("User not found");
         return;
