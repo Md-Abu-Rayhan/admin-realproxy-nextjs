@@ -639,6 +639,17 @@ span.flatpickr-weekday,
   -webkit-appearance: none;
 }
 
+/* Show calendar picker icon for EPS payments date inputs */
+input[type="date"].date-filter-input::-webkit-calendar-picker-indicator {
+  display: block;
+  -webkit-appearance: auto;
+  cursor: pointer;
+  opacity: 0.6;
+}
+input[type="date"].date-filter-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
 .stocks-slider-outer .swiper-button-next:after,
 .stocks-slider-outer .swiper-button-prev:after {
   @apply hidden;

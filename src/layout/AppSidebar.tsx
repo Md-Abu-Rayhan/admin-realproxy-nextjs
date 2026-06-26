@@ -15,6 +15,7 @@ import {
   PieChartIcon,
   TableIcon,
   UserCircleIcon,
+  DollarLineIcon,
 } from "../icons/index";
 
 type NavItem = {
@@ -29,6 +30,11 @@ const navItems: NavItem[] = [
     icon: <GridIcon />,
     name: "Dashboard",
     path: "/",
+  },
+  {
+    icon: <DollarLineIcon />,
+    name: "EPS Payment",
+    path: "/eps-payments",
   },
   {
     icon: <TableIcon />,
