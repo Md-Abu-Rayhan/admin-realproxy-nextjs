@@ -303,7 +303,7 @@ export default function UserInfoPage() {
                 headers={["Order ID", "Amount (USD)", "Paid", "Asset", "Status", "Date"]}
                 rows={data.cryptoPayments.map((c) => [
                   <span key={c.id} className="font-mono text-xs">{c.orderId}</span>,
-                  `$${(c.amount / 125).toFixed(2)}`,
+                  `$${c.amount.toFixed(2)}`,
                   c.paymentAmount || "—",
                   c.paymentAssetId || "—",
                   <Badge key={c.id} status={c.status} />,
