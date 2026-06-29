@@ -253,7 +253,7 @@ export default function UserInfoPage() {
               {statCard("Total Earned", `$${(data.totalEarned / 125).toFixed(2)}`, "text-green-600 dark:text-green-400")}
               {statCard("Proxy Account", data.proxyAccount || "—")}
               {statCard("Proxy Password", data.proxyPassword || "—")}
-              {statCard("Created At", new Date(data.createdAt).toLocaleDateString())}
+              {statCard("Created At", new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }))}
             </div>
           </SectionCard>
 
@@ -290,7 +290,7 @@ export default function UserInfoPage() {
                   `$${(p.amount / 125).toFixed(2)}`,
                   <Badge key={p.id} status={p.status} />,
                   p.paymentMethod || "—",
-                  new Date(p.createdAt).toLocaleDateString(),
+                  new Date(p.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
                 ])}
               />
             </SectionCard>
@@ -307,7 +307,7 @@ export default function UserInfoPage() {
                   c.paymentAmount || "—",
                   c.paymentAssetId || "—",
                   <Badge key={c.id} status={c.status} />,
-                  new Date(c.createdAt).toLocaleDateString(),
+                  new Date(c.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
                 ])}
               />
             </SectionCard>
@@ -337,7 +337,7 @@ export default function UserInfoPage() {
                   `$${(c.purchaseAmount / 125).toFixed(2)}`,
                   `$${(c.commissionAmount / 125).toFixed(2)}`,
                   <Badge key={c.id} status={c.status} />,
-                  new Date(c.createdAt).toLocaleDateString(),
+                  new Date(c.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
                 ])}
               />
             </SectionCard>
@@ -354,7 +354,7 @@ export default function UserInfoPage() {
                   `$${(w.amountDeducted / 125).toFixed(2)}`,
                   w.balanceMb.toFixed(1),
                   <Badge key={w.id} status={w.status} />,
-                  new Date(w.createdAt).toLocaleDateString(),
+                  new Date(w.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
                 ])}
               />
             </SectionCard>
