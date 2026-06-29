@@ -57,6 +57,7 @@ export default function EpsPaymentsPage() {
 
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [status, setStatus] = useState("");
 
   const fetchPayments = useCallback(async () => {
     setLoading(true);
@@ -68,6 +69,7 @@ export default function EpsPaymentsPage() {
       if (startDate) params.set("startDate", startDate);
       if (endDate) params.set("endDate", endDate);
       if (search) params.set("search", search);
+      if (status) params.set("status", status);
 
       const res = await apiFetch(`/api/Admin/eps-payments?${params}`);
       if (!res.ok) throw new Error("Failed to fetch");
@@ -78,7 +80,7 @@ export default function EpsPaymentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, startDate, endDate]);
+  }, [page, search, startDate, endDate, status]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,6 +124,21 @@ export default function EpsPaymentsPage() {
                   onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
                   className="date-filter-input block w-full sm:w-auto rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90"
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
+                <select
+                  value={status}
+                  onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+                  className="block w-full sm:w-auto rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90"
+                >
+                  <option value="">All</option>
+                  <option value="Success">Success</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Failed">Failed</option>
+                  <option value="Cancelled">Cancelled</option>
+                  <option value="Expired">Expired</option>
+                </select>
               </div>
             </div>
 
