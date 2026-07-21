@@ -1,0 +1,335 @@
+"use client";
+import { useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
+import { apiFetch } from "@/lib/api";
+
+interface CryptoPayment {
+  id: number;
+  userId: number;
+  email: string;
+  proxyAccount: string | null;
+  orderId: string;
+  paymentAssetId: string | null;
+  paymentAmount: string | null;
+  txid: string | null;
+  blockExplorerUrl: string | null;
+  amountBdt: number;
+  status: string;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+interface PaginatedResponse {
+  items: CryptoPayment[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const colorMap: Record<string, string> = {
+    Success: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400",
+    Completed: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400",
+    Paid: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400",
+    Failed: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400",
+    Pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400",
+    Cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400",
+    Expired: "bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400",
+  };
+  return (
+    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${colorMap[status] || "bg-gray-100 text-gray-600"}`}>
+      {status}
+    </span>
+  );
+}
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+export default function CryptoPaymentsPage() {
+  const [data, setData] = useState<PaginatedResponse | null>(null);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const pageSize = 20;
+
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  const [startDate, setStartDate] = useState(oneWeekAgo.toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
+
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [status, setStatus] = useState("");
+
+  const fetchPayments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+      });
+      if (startDate) params.set("startDate", startDate);
+      if (endDate) params.set("endDate", endDate);
+      if (search) params.set("search", search);
+      if (status) params.set("status", status);
+
+      const res = await apiFetch(`/api/Admin/crypto-payments?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      const json: PaginatedResponse = await res.json();
+      setData(json);
+    } catch {
+      toast.error("Failed to load Crypto payments.");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, search, startDate, endDate, status]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearch(searchInput);
+    setPage(1);
+  };
+
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-white/[0.03]">
+        <div className="flex flex-col gap-4">
+          <div>
+            <h1 className="mb-1 text-2xl font-semibold text-gray-800 dark:text-white/90">Crypto Payments</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {data ? `${data.totalCount} total crypto payments — Page ${data.page} of ${data.totalPages}` : "Loading..."}
+            </p>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">From</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                  className="date-filter-input block w-full sm:w-auto rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">To</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                  className="date-filter-input block w-full sm:w-auto rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
+                <select
+                  value={status}
+                  onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+                  className="block w-full sm:w-auto rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90"
+                >
+                  <option value="">All</option>
+                  <option value="Success">Success</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Failed">Failed</option>
+                  <option value="Cancelled">Cancelled</option>
+                  <option value="Expired">Expired</option>
+                </select>
+              </div>
+            </div>
+
+            <form onSubmit={handleSearch} className="flex gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search email, proxy, order ID, TxID..."
+                className="block w-full sm:w-72 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90 dark:placeholder-gray-500"
+              />
+              <button
+                type="submit"
+                className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 whitespace-nowrap"
+              >
+                Search
+              </button>
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => { setSearch(""); setSearchInput(""); setPage(1); }}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 whitespace-nowrap"
+                >
+                  Clear
+                </button>
+              )}
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden dark:border-gray-700 dark:bg-white/[0.03]">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 dark:border-gray-700">
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Email</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Proxy</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Order ID</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Asset</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">TxID / Explorer</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Amount</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-12 text-center text-gray-400">Loading...</td>
+                </tr>
+              ) : data?.items.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-12 text-center text-gray-400">
+                    {search ? `No payments matching "${search}".` : "No crypto payments found for the selected date range."}
+                  </td>
+                </tr>
+              ) : (
+                data?.items.map((p) => (
+                  <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <td className="px-4 py-3">
+                      <span className="font-medium text-gray-800 dark:text-white/90">{p.email}</span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
+                      {p.proxyAccount ? (
+                        <span className="font-mono text-xs">{p.proxyAccount}</span>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-xs text-gray-700 dark:text-gray-200">{p.orderId}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.paymentAssetId ? (
+                        <span className="inline-block rounded bg-blue-50 px-2 py-0.5 font-mono text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                          {p.paymentAssetId}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.txid ? (
+                        p.blockExplorerUrl ? (
+                          <a
+                            href={p.blockExplorerUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-xs text-blue-600 hover:underline dark:text-blue-400"
+                            title={p.txid}
+                          >
+                            {p.txid.substring(0, 10)}...
+                          </a>
+                        ) : (
+                          <span className="font-mono text-xs text-gray-700 dark:text-gray-200" title={p.txid}>
+                            {p.txid.substring(0, 10)}...
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium text-gray-800 dark:text-white/90 whitespace-nowrap">
+                      ${(p.amountBdt / 125).toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={p.status} />
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {formatDate(p.createdAt)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {data && data.totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3 dark:border-gray-700">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Showing {(data.page - 1) * data.pageSize + 1}–{Math.min(data.page * data.pageSize, data.totalCount)} of {data.totalCount}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={data.page <= 1}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                Previous
+              </button>
+              <div className="flex items-center gap-1">
+                {(() => {
+                  const pages: React.ReactNode[] = [];
+                  const total = data.totalPages;
+                  const current = data.page;
+                  const start = Math.max(1, current - 2);
+                  const end = Math.min(total, current + 2);
+
+                  if (start > 1) {
+                    pages.push(
+                      <button key={1} onClick={() => setPage(1)} className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">1</button>
+                    );
+                    if (start > 2) pages.push(<span key="dots1" className="px-1 text-gray-400">⋯</span>);
+                  }
+
+                  for (let i = start; i <= end; i++) {
+                    pages.push(
+                      <button
+                        key={i}
+                        onClick={() => setPage(i)}
+                        className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium ${
+                          i === current
+                            ? "bg-blue-600 text-white"
+                            : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                        }`}
+                      >
+                        {i}
+                      </button>
+                    );
+                  }
+
+                  if (end < total) {
+                    if (end < total - 1) pages.push(<span key="dots2" className="px-1 text-gray-400">⋯</span>);
+                    pages.push(
+                      <button key={total} onClick={() => setPage(total)} className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">{total}</button>
+                    );
+                  }
+
+                  return pages;
+                })()}
+              </div>
+              <button
+                onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
+                disabled={data.page >= data.totalPages}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

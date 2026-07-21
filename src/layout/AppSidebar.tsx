@@ -37,6 +37,11 @@ const navItems: NavItem[] = [
     path: "/eps-payments",
   },
   {
+    icon: <BoxCubeIcon />,
+    name: "Crypto Payments",
+    path: "/crypto-payments",
+  },
+  {
     icon: <TableIcon />,
     name: "Pending Commissions",
     path: "/commissions",
