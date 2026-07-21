@@ -6,7 +6,9 @@ import { apiFetch } from "@/lib/api";
 interface Commission {
   id: number;
   referrerUserId: number;
+  referrerEmail?: string;
   referredUserId: number;
+  referredEmail?: string;
   sourceOrderId: string;
   purchaseAmount: number;
   commissionPercent: number;
@@ -145,7 +147,7 @@ export default function PendingCommissionsPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
-                {["ID", "Referrer ID", "Referred ID", "Order ID", "Purchase Amount", "Commission (5%)", "Date", "Actions"].map(
+                {["ID", "Referrer Email", "Referred Email", "Order ID", "Purchase Amount", "Commission (5%)", "Date", "Actions"].map(
                   (h) => (
                     <th
                       key={h}
@@ -161,8 +163,12 @@ export default function PendingCommissionsPage() {
               {commissions.map((c) => (
                 <tr key={c.id} className="bg-white hover:bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800">
                   <td className="px-4 py-3 font-mono text-gray-700 dark:text-gray-200">{c.id}</td>
-                  <td className="px-4 py-3 text-gray-700 dark:text-gray-200">{c.referrerUserId}</td>
-                  <td className="px-4 py-3 text-gray-700 dark:text-gray-200">{c.referredUserId}</td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-gray-200 font-medium">
+                    {c.referrerEmail || `User #${c.referrerUserId}`}
+                  </td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-gray-200 font-medium">
+                    {c.referredEmail || `User #${c.referredUserId}`}
+                  </td>
                   <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">{c.sourceOrderId}</td>
                   <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
                     ${(Number(c.purchaseAmount) / 125).toFixed(2)}
@@ -170,7 +176,7 @@ export default function PendingCommissionsPage() {
                   <td className="px-4 py-3 font-semibold text-green-600 dark:text-green-400">
                     ${(Number(c.commissionAmount) / 125).toFixed(2)}
                   </td>
-                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
                     {new Date(c.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
