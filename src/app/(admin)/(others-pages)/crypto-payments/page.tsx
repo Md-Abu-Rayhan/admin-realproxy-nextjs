@@ -94,41 +94,96 @@ export default function CryptoPaymentsPage() {
     setPage(1);
   };
 
-  const metrics = useMemo(() => {
-    const items = data?.items || [];
-    const uniqueUserEmails = new Set(
-      items.map((p) => p.email?.trim().toLowerCase()).filter(Boolean)
-    );
-    const totalUsers = uniqueUserEmails.size;
+  const [metrics, setMetrics] = useState<{
+    totalUsers: number;
+    totalAmountBdt: number;
+    totalAmountUsd: number;
+    successfulCount: number;
+    successAmountBdt: number;
+    successAmountUsd: number;
+    totalCount: number;
+  } | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(false);
 
-    const totalAmountBdt = items.reduce(
-      (sum, p) => sum + (Number(p.amountBdt) || 0),
-      0
-    );
-    const totalAmountUsd = totalAmountBdt / 125;
+  const fetchRangeMetrics = useCallback(async () => {
+    setMetricsLoading(true);
+    try {
+      const baseParams = new URLSearchParams();
+      if (startDate) baseParams.set("startDate", startDate);
+      if (endDate) baseParams.set("endDate", endDate);
+      if (search) baseParams.set("search", search);
+      if (status) baseParams.set("status", status);
 
-    const successfulPayments = items.filter((p) =>
-      ["Success", "Completed", "Paid"].includes(p.status)
-    );
-    const successAmountBdt = successfulPayments.reduce(
-      (sum, p) => sum + (Number(p.amountBdt) || 0),
-      0
-    );
-    const successAmountUsd = successAmountBdt / 125;
+      // Fetch first chunk with pageSize=100
+      const firstParams = new URLSearchParams(baseParams);
+      firstParams.set("page", "1");
+      firstParams.set("pageSize", "100");
 
-    return {
-      totalUsers,
-      totalAmountBdt,
-      totalAmountUsd,
-      successfulCount: successfulPayments.length,
-      successAmountUsd,
-      totalCount: data?.totalCount ?? items.length,
-    };
-  }, [data]);
+      const firstRes = await apiFetch(`/api/Admin/crypto-payments?${firstParams}`);
+      if (!firstRes.ok) throw new Error("Failed to fetch range metrics");
+      const firstJson: PaginatedResponse = await firstRes.json();
+
+      let allItems = [...(firstJson.items || [])];
+      const totalPages = firstJson.totalPages || 1;
+
+      // If more pages exist, fetch remaining in parallel (up to 50 pages / 5,000 items)
+      if (totalPages > 1) {
+        const pagePromises = [];
+        for (let p = 2; p <= Math.min(totalPages, 50); p++) {
+          const pParams = new URLSearchParams(baseParams);
+          pParams.set("page", String(p));
+          pParams.set("pageSize", "100");
+          pagePromises.push(
+            apiFetch(`/api/Admin/crypto-payments?${pParams}`)
+              .then((r) => (r.ok ? r.json() : null))
+              .then((j) => j?.items || [])
+              .catch(() => [])
+          );
+        }
+        const remainingResults = await Promise.all(pagePromises);
+        remainingResults.forEach((pageItems) => {
+          allItems = allItems.concat(pageItems);
+        });
+      }
+
+      const uniqueUserEmails = new Set(
+        allItems.map((p) => p.email?.trim().toLowerCase()).filter(Boolean)
+      );
+      const totalAmountBdt = allItems.reduce(
+        (sum, p) => sum + (Number(p.amountBdt) || 0),
+        0
+      );
+      const successfulPayments = allItems.filter((p) =>
+        ["Success", "Completed", "Paid"].includes(p.status)
+      );
+      const successAmountBdt = successfulPayments.reduce(
+        (sum, p) => sum + (Number(p.amountBdt) || 0),
+        0
+      );
+
+      setMetrics({
+        totalUsers: uniqueUserEmails.size,
+        totalAmountBdt,
+        totalAmountUsd: totalAmountBdt / 125,
+        successfulCount: successfulPayments.length,
+        successAmountBdt,
+        successAmountUsd: successAmountBdt / 125,
+        totalCount: firstJson.totalCount ?? allItems.length,
+      });
+    } catch (err) {
+      console.error("Error fetching all range metrics:", err);
+    } finally {
+      setMetricsLoading(false);
+    }
+  }, [startDate, endDate, search, status]);
 
   useEffect(() => {
     fetchPayments();
   }, [fetchPayments]);
+
+  useEffect(() => {
+    fetchRangeMetrics();
+  }, [fetchRangeMetrics]);
 
   return (
     <div className="space-y-6">
@@ -144,10 +199,14 @@ export default function CryptoPaymentsPage() {
           </div>
           <div className="mt-4">
             <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90">
-              {loading ? "..." : metrics.totalUsers.toLocaleString()}
+              {metricsLoading ? (
+                <span className="animate-pulse text-gray-400">Calculating...</span>
+              ) : (
+                (metrics?.totalUsers ?? 0).toLocaleString()
+              )}
             </h3>
             <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-              Unique customer accounts
+              Unique accounts across date range
             </p>
           </div>
         </div>
@@ -162,10 +221,14 @@ export default function CryptoPaymentsPage() {
           </div>
           <div className="mt-4">
             <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90">
-              {loading ? "..." : `$${metrics.totalAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              {metricsLoading ? (
+                <span className="animate-pulse text-gray-400">Calculating...</span>
+              ) : (
+                `$${(metrics?.totalAmountUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              )}
             </h3>
             <p className="mt-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-              ≈ ৳{metrics.totalAmountBdt.toLocaleString()} BDT
+              ≈ ৳{(metrics?.totalAmountBdt ?? 0).toLocaleString()} BDT (All pages)
             </p>
           </div>
         </div>
@@ -180,10 +243,14 @@ export default function CryptoPaymentsPage() {
           </div>
           <div className="mt-4">
             <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90">
-              {loading ? "..." : `$${metrics.successAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              {metricsLoading ? (
+                <span className="animate-pulse text-gray-400">Calculating...</span>
+              ) : (
+                `$${(metrics?.successAmountUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              )}
             </h3>
             <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-              {metrics.successfulCount} successful payments
+              {metrics?.successfulCount ?? 0} successful txns in range
             </p>
           </div>
         </div>
@@ -198,10 +265,14 @@ export default function CryptoPaymentsPage() {
           </div>
           <div className="mt-4">
             <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90">
-              {loading ? "..." : metrics.totalCount.toLocaleString()}
+              {metricsLoading ? (
+                <span className="animate-pulse text-gray-400">Calculating...</span>
+              ) : (
+                (metrics?.totalCount ?? 0).toLocaleString()
+              )}
             </h3>
             <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-              Transactions recorded
+              Total transactions in date range
             </p>
           </div>
         </div>
