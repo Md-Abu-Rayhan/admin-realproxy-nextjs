@@ -249,8 +249,8 @@ export default function CryptoPaymentsPage() {
                 `$${(metrics?.successAmountUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
               )}
             </h3>
-            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-              {metrics?.successfulCount ?? 0} successful txns in range
+            <p className="mt-1 text-xs font-medium text-purple-600 dark:text-purple-400">
+              ≈ ৳{(metrics?.successAmountBdt ?? 0).toLocaleString()} BDT ({metrics?.successfulCount ?? 0} txns)
             </p>
           </div>
         </div>
