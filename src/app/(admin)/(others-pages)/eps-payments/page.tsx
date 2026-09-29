@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { apiFetch } from "@/lib/api";
+import { GroupIcon, DollarLineIcon, CheckCircleIcon, BoxIconLine } from "@/icons";
 
 interface EpsPayment {
   id: number;
@@ -88,12 +89,119 @@ export default function EpsPaymentsPage() {
     setPage(1);
   };
 
+  const metrics = useMemo(() => {
+    const items = data?.items || [];
+    const uniqueUserEmails = new Set(
+      items.map((p) => p.email?.trim().toLowerCase()).filter(Boolean)
+    );
+    const totalUsers = uniqueUserEmails.size;
+
+    const totalAmountBdt = items.reduce(
+      (sum, p) => sum + (Number(p.amount) || 0),
+      0
+    );
+    const totalAmountUsd = totalAmountBdt / 125;
+
+    const successfulPayments = items.filter((p) =>
+      ["Success", "Completed", "Paid"].includes(p.status)
+    );
+    const successAmountBdt = successfulPayments.reduce(
+      (sum, p) => sum + (Number(p.amount) || 0),
+      0
+    );
+    const successAmountUsd = successAmountBdt / 125;
+
+    return {
+      totalUsers,
+      totalAmountBdt,
+      totalAmountUsd,
+      successfulCount: successfulPayments.length,
+      successAmountBdt,
+      successAmountUsd,
+      totalCount: data?.totalCount ?? items.length,
+    };
+  }, [data]);
+
   useEffect(() => {
     fetchPayments();
   }, [fetchPayments]);
 
   return (
     <div className="space-y-6">
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+        {/* Total Users Card */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</span>
+            <div className="flex items-center justify-center w-12 h-12 bg-blue-50 text-blue-600 rounded-xl dark:bg-blue-500/10 dark:text-blue-400">
+              <GroupIcon className="w-6 h-6" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90">
+              {loading ? "..." : metrics.totalUsers.toLocaleString()}
+            </h3>
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+              Unique customer accounts
+            </p>
+          </div>
+        </div>
+
+        {/* Total Amount Card */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Amount</span>
+            <div className="flex items-center justify-center w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl dark:bg-emerald-500/10 dark:text-emerald-400">
+              <DollarLineIcon className="w-6 h-6" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90">
+              {loading ? "..." : `৳${metrics.totalAmountBdt.toLocaleString()}`}
+            </h3>
+            <p className="mt-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              ≈ ${metrics.totalAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+            </p>
+          </div>
+        </div>
+
+        {/* Completed Amount Card */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Completed Volume</span>
+            <div className="flex items-center justify-center w-12 h-12 bg-purple-50 text-purple-600 rounded-xl dark:bg-purple-500/10 dark:text-purple-400">
+              <CheckCircleIcon className="w-6 h-6" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90">
+              {loading ? "..." : `৳${metrics.successAmountBdt.toLocaleString()}`}
+            </h3>
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+              {metrics.successfulCount} successful payments
+            </p>
+          </div>
+        </div>
+
+        {/* Total Payments Card */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Payments</span>
+            <div className="flex items-center justify-center w-12 h-12 bg-amber-50 text-amber-600 rounded-xl dark:bg-amber-500/10 dark:text-amber-400">
+              <BoxIconLine className="w-6 h-6" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90">
+              {loading ? "..." : metrics.totalCount.toLocaleString()}
+            </h3>
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+              Transactions recorded
+            </p>
+          </div>
+        </div>
+      </div>
       {/* Header */}
       <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-white/[0.03]">
         <div className="flex flex-col gap-4">
