@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   async rewrites() {
-    const backendApi = process.env.BACKEND_API_URL || "http://127.0.0.1:5001";
+    const backendApi = process.env.BACKEND_API_URL || "http://127.0.0.1:5002";
     return [
       {
         source: "/api/:path*",
