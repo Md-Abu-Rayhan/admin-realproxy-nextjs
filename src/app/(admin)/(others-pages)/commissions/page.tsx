@@ -21,6 +21,7 @@ interface Commission {
 export default function PendingCommissionsPage() {
   const [tab, setTab] = useState<"rotating" | "premium">("rotating");
   const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [counts, setCounts] = useState<{ rotating: number; premium: number }>({ rotating: 0, premium: 0 });
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState<number | null>(null);
   const [rejecting, setRejecting] = useState<number | null>(null);
@@ -36,6 +37,27 @@ export default function PendingCommissionsPage() {
       if (!res.ok) throw new Error("Failed to fetch");
       const data: Commission[] = await res.json();
       setCommissions(data);
+
+      // Update count for current tab
+      setCounts((prev) => ({
+        ...prev,
+        [tab]: data.length,
+      }));
+
+      // Fetch the other tab count quietly
+      const otherEndpoint =
+        tab === "premium"
+          ? "/api/admin/commissions/pending"
+          : "/api/admin/commissions/premium/pending";
+      apiFetch(otherEndpoint)
+        .then((r) => r.json())
+        .then((otherData: Commission[]) => {
+          setCounts((prev) => ({
+            ...prev,
+            [tab === "premium" ? "rotating" : "premium"]: otherData.length,
+          }));
+        })
+        .catch(() => {});
     } catch {
       toast.error(`Failed to load pending ${tab} commissions.`);
     } finally {
@@ -61,6 +83,10 @@ export default function PendingCommissionsPage() {
       if (!res.ok) throw new Error(data.message || "Approval failed");
       toast.success(data.message || "Commission approved!");
       setCommissions((prev) => prev.filter((c) => c.id !== id));
+      setCounts((prev) => ({
+        ...prev,
+        [tab]: Math.max(0, prev[tab] - 1),
+      }));
     } catch (err: any) {
       toast.error(err.message || "Failed to approve commission.");
     } finally {
@@ -82,6 +108,10 @@ export default function PendingCommissionsPage() {
       if (!res.ok) throw new Error(data.message || "Rejection failed");
       toast.success(data.message || "Commission rejected successfully!");
       setCommissions((prev) => prev.filter((c) => c.id !== id));
+      setCounts((prev) => ({
+        ...prev,
+        [tab]: Math.max(0, prev[tab] - 1),
+      }));
     } catch (err: any) {
       toast.error(err.message || "Failed to reject commission.");
     } finally {
@@ -112,23 +142,33 @@ export default function PendingCommissionsPage() {
       <div className="mb-6 flex space-x-2 border-b border-gray-200 dark:border-gray-700">
         <button
           onClick={() => setTab("rotating")}
-          className={`pb-3 px-4 text-sm font-medium transition-colors border-b-2 ${
+          className={`pb-3 px-4 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${
             tab === "rotating"
               ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-semibold"
               : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           }`}
         >
-          Rotating Proxies
+          <span>Rotating Proxies</span>
+          {counts.rotating > 0 && (
+            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+              {counts.rotating}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setTab("premium")}
-          className={`pb-3 px-4 text-sm font-medium transition-colors border-b-2 ${
+          className={`pb-3 px-4 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${
             tab === "premium"
               ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-semibold"
               : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           }`}
         >
-          Premium Proxies
+          <span>Premium Proxies</span>
+          {counts.premium > 0 && (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+              {counts.premium}
+            </span>
+          )}
         </button>
       </div>
 

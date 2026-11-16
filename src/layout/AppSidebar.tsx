@@ -16,6 +16,7 @@ import {
   TableIcon,
   UserCircleIcon,
   DollarLineIcon,
+  GroupIcon,
 } from "../icons/index";
 
 type NavItem = {
@@ -55,6 +56,11 @@ const navItems: NavItem[] = [
     icon: <DollarLineIcon />,
     name: "Balance Adjustments",
     path: "/wallet-adjustments",
+  },
+  {
+    icon: <GroupIcon />,
+    name: "Reseller Dispatches",
+    path: "/reseller-reports",
   },
   {
     icon: <UserCircleIcon />,
