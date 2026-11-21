@@ -8,8 +8,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+import { API_URL } from "@/lib/api";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);

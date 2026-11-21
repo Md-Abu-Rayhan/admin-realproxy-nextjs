@@ -14,6 +14,7 @@ interface EpsPayment {
   amount: number;
   status: string;
   paymentMethod: string | null;
+  proxyType?: string;
   createdAt: string;
 }
 
@@ -59,6 +60,7 @@ export default function EpsPaymentsPage() {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [status, setStatus] = useState("");
+  const [proxyType, setProxyType] = useState("");
 
   const fetchPayments = useCallback(async () => {
     setLoading(true);
@@ -71,6 +73,7 @@ export default function EpsPaymentsPage() {
       if (endDate) params.set("endDate", endDate);
       if (search) params.set("search", search);
       if (status) params.set("status", status);
+      if (proxyType && proxyType !== "ALL") params.set("proxyType", proxyType);
 
       const res = await apiFetch(`/api/Admin/eps-payments?${params}`);
       if (!res.ok) throw new Error("Failed to fetch");
@@ -81,7 +84,7 @@ export default function EpsPaymentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, startDate, endDate, status]);
+  }, [page, search, startDate, endDate, status, proxyType]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +111,7 @@ export default function EpsPaymentsPage() {
       if (endDate) baseParams.set("endDate", endDate);
       if (search) baseParams.set("search", search);
       if (status) baseParams.set("status", status);
+      if (proxyType && proxyType !== "ALL") baseParams.set("proxyType", proxyType);
 
       // Fetch first chunk with pageSize=100
       const firstParams = new URLSearchParams(baseParams);
@@ -170,7 +174,7 @@ export default function EpsPaymentsPage() {
     } finally {
       setMetricsLoading(false);
     }
-  }, [startDate, endDate, search, status]);
+  }, [startDate, endDate, search, status, proxyType]);
 
   useEffect(() => {
     fetchPayments();
@@ -304,6 +308,18 @@ export default function EpsPaymentsPage() {
                 />
               </div>
               <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Proxy Network</label>
+                <select
+                  value={proxyType}
+                  onChange={(e) => { setProxyType(e.target.value); setPage(1); }}
+                  className="block w-full sm:w-auto rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90"
+                >
+                  <option value="">All Proxy Networks</option>
+                  <option value="Residential">Residential Proxies</option>
+                  <option value="Premium">Premium</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
                 <select
                   value={status}
@@ -358,6 +374,7 @@ export default function EpsPaymentsPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Proxy</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Merchant ID</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Order ID</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Proxy Network</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">EpsTrxId</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Amount</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Status</th>
@@ -367,51 +384,67 @@ export default function EpsPaymentsPage() {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-gray-400">Loading...</td>
+                  <td colSpan={9} className="px-4 py-12 text-center text-gray-400">Loading...</td>
                 </tr>
               ) : data?.items.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-gray-400">
+                  <td colSpan={9} className="px-4 py-12 text-center text-gray-400">
                     {search ? `No payments matching "${search}".` : "No payments found for the selected date range."}
                   </td>
                 </tr>
               ) : (
-                data?.items.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <td className="px-4 py-3">
-                      <span className="font-medium text-gray-800 dark:text-white/90">{p.email}</span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
-                      {p.proxyAccount ? (
-                        <span className="font-mono text-xs">{p.proxyAccount}</span>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-mono text-xs text-gray-700 dark:text-gray-200">{p.merchantTransactionId}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-mono text-xs text-gray-700 dark:text-gray-200">{p.customerOrderId}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {p.epsTransactionId ? (
-                        <span className="font-mono text-xs text-gray-700 dark:text-gray-200">{p.epsTransactionId}</span>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-800 dark:text-white/90 whitespace-nowrap">
-                      ${(p.amount / 125).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={p.status} />
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                      {formatDate(p.createdAt)}
-                    </td>
-                  </tr>
-                ))
+                data?.items.map((p) => {
+                  const isPremium = p.customerOrderId?.toUpperCase().startsWith("ST") || (p.proxyType && p.proxyType.toLowerCase().includes("premium"));
+                  const pType = isPremium ? "Premium" : "Residential";
+
+                  return (
+                    <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <td className="px-4 py-3">
+                        <span className="font-medium text-gray-800 dark:text-white/90">{p.email}</span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
+                        {p.proxyAccount ? (
+                          <span className="font-mono text-xs">{p.proxyAccount}</span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-xs text-gray-700 dark:text-gray-200">{p.merchantTransactionId}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-xs text-gray-700 dark:text-gray-200">{p.customerOrderId}</span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                            isPremium
+                              ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
+                              : "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20"
+                          }`}
+                        >
+                          {isPremium ? "👑 " : "🌐 "}{pType}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {p.epsTransactionId ? (
+                          <span className="font-mono text-xs text-gray-700 dark:text-gray-200">{p.epsTransactionId}</span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium text-gray-800 dark:text-white/90 whitespace-nowrap">
+                        ${(p.amount / 125).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={p.status} />
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        {formatDate(p.createdAt)}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
